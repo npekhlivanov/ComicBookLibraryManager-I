@@ -10,7 +10,7 @@
     <link href="~/Content/bootstrap-lumen.min.css" rel="stylesheet" type="text/css" />
     <link href="~/Content/bootstrap-datepicker3.min.css" rel="stylesheet" type="text/css" />
     <link href="~/Content/site.css" rel="stylesheet" type="text/css" />
-    <script src="~/Scripts/modernizr-2.6.2.js"></script>
+    <script src="~/Scripts/modernizr-2.8.3.js"></script>
 </head>
 <body>
     <div class="navbar navbar-inverse navbar-fixed-top">
@@ -32,24 +32,107 @@
             </div>
         </div>
     </div>
-
     <div class="container body-content">
         @RenderBody()
         <hr />
         <footer>
-            <p>&copy; @DateTime.Now.Year - @applicationName</p>
+            <p>&copy; @DateTime.Now.Year - @applicationName (@Session.SessionID): @System.Globalization.CultureInfo.CurrentCulture (@System.Globalization.CultureInfo.CurrentUICulture)</p>
         </footer>
     </div>
-
-    <script src="~/Scripts/jquery-3.1.1.min.js"></script>
+    <script src="~/Scripts/jquery-3.3.1.min.js"></script>
     <script src="~/Scripts/jquery.validate.min.js"></script>
     <script src="~/Scripts/jquery.validate.unobtrusive.min.js"></script>
+
+    <script src="~/Scripts/cldr.js"></script>
+    <script src="~/Scripts/cldr/event.js"></script>
+    <script src="~/Scripts/cldr/supplemental.js"></script>
+    @*<script src="~/Scripts/cldr/unresolved.js"></script>*@
+
+    <script src="~/Scripts/globalize.js"></script>
+    <script src="~/Scripts/globalize/number.js"></script>
+    <script src="~/Scripts/globalize/date.js"></script>
+
+    <script src="~/Scripts/jquery.validate.globalize.js"></script>
+
+    <script src="~/Scripts/jquery.validate.unobtrusive.bootstrap.js"></script>
+    @*jQuery Unobtrusive Validation Bootstrap By David Haney; the other one did not produce any visual effect*@
+    @*<script src="~/Scripts/moment.js"></script> gives warning fot deprecated date format in the document.ready script below: moment(value).format(...)*@
+
     <script src="~/Scripts/bootstrap.min.js"></script>
     <script src="~/Scripts/bootstrap-datepicker.min.js"></script>
+    <script src="~/Scripts/bootstrap-datepicker.bg.min.js"></script>
     <script>
         $('input.datepicker').datepicker({
-            format: 'm/d/yyyy'
+            @*format: '@System.Configuration.ConfigurationManager.AppSettings["DatepickerDateFormat"]',*@
+            language: "@System.Threading.Thread.CurrentThread.CurrentCulture.TwoLetterISOLanguageName",
+            format: "@System.Threading.Thread.CurrentThread.CurrentCulture.DateTimeFormat.ShortDatePattern.Replace('M', 'm')",
+            weekStart: @((int)System.Threading.Thread.CurrentThread.CurrentCulture.DateTimeFormat.FirstDayOfWeek),
+            todayBtn: "linked"
         });
     </script>
+    <script>
+        $(document).ready(function () {
+            $.when(
+                $.get("/Content/cldr-data/supplemental/likelySubtags.json"),
+                $.get("/Content/cldr-data/main/bg/numbers.json"),
+                $.get("/Content/cldr-data/supplemental/numberingSystems.json"),
+                $.get("/Content/cldr-data/main/bg/ca-gregorian.json"),
+                $.get("/Content/cldr-data/main/bg/timeZoneNames.json"),
+                $.get("/Content/cldr-data/supplemental/timeData.json"),
+                $.get("/Content/cldr-data/supplemental/weekData.json")
+            ).then(function () {
+                // Normalize $.get results, we only need the JSON, not the request statuses.
+                return [].slice.apply(arguments, [0]).map(function (result) {
+                    return result[0];
+                });
+            }).then(Globalize.load).then(function () {
+                // Initialise Globalize to the current UI culture
+                Globalize.locale("bg");
+            });
+        });
+    </script>
+    @*<script>
+            (function ($) {
+                var defaultOptions = {
+                    validClass: 'has-success',
+                    errorClass: 'has-error',
+                    highlight: function (element, errorClass, validClass) {
+                        $(element).closest('.form-group')
+                            .removeClass(validClass)
+                            .addClass(errorClass);
+                    },
+                    unhighlight: function (element, errorClass, validClass) {
+                        $(element).closest('.form-group')
+                            .removeClass(errorClass)
+                            .addClass(validClass);
+                    }
+                };
+
+                $.validator.setDefaults(defaultOptions);
+
+                $.validator.unobtrusive.options = {
+                    errorClass: defaultOptions.errorClass,
+                    validClass: defaultOptions.validClass,
+                };
+            })(jQuery);
+        </script>*@
+    @*<script>
+            Globalize.load;
+            Globalize.locale("en-US");
+        </script>*@
+    @*<script>
+                $(document).ready(function () {
+                    $.validator.methods.date = function (value, element) {
+                        return this.optional(element) || moment(value, "DD.MM.YYYY", true).isValid(); //moment(value).format("@System.Configuration.ConfigurationManager.AppSettings["DateFormat"]");
+                    }
+                });
+        </script>*@
+    @*<script>
+            $(document).ready(function () {
+                $.validator.methods.date = function (value, element) {
+                    return this.optional(element) || $.datepicker.parseDate('@System.Configuration.ConfigurationManager.AppSettings["DatepickerDateFormat"]', value) != null;
+                }
+            });
+        </script>*@
 </body>
 </html>

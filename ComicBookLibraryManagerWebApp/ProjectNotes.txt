@@ -1,0 +1,114 @@
+﻿Client-side validation 
+
+* Variant 1: use Globalize.js
+
+The following lines must be included in "_Layout.cshtml":
+    <script src="~/Scripts/cldr.js"></script>
+    <script src="~/Scripts/cldr/event.js"></script>
+    <script src="~/Scripts/cldr/supplemental.js"></script>
+    @*<script src="~/Scripts/cldr/unresolved.js"></script>*@
+
+    <script src="~/Scripts/globalize.js"></script>
+    <script src="~/Scripts/globalize/number.js"></script>
+    <script src="~/Scripts/globalize/date.js"></script>
+
+    <script src="~/Scripts/jquery.validate.globalize.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $.when(
+                $.get("/Content/cldr-data/supplemental/likelySubtags.json"),
+                $.get("/Content/cldr-data/main/bg/numbers.json"),
+                $.get("/Content/cldr-data/supplemental/numberingSystems.json"),
+                $.get("/Content/cldr-data/main/bg/ca-gregorian.json"),
+                $.get("/Content/cldr-data/main/bg/timeZoneNames.json"),
+                $.get("/Content/cldr-data/supplemental/timeData.json"),
+                $.get("/Content/cldr-data/supplemental/weekData.json")
+            ).then(function () {
+                // Normalize $.get results, we only need the JSON, not the request statuses.
+                return [].slice.apply(arguments, [0]).map(function (result) {
+                    return result[0];
+                });
+            }).then(Globalize.load).then(function () {
+                // Initialise Globalize to the current UI culture
+                Globalize.locale("bg");
+            });
+        });
+    </script>
+
+The following customizations have to be made for the "bg" JSON-files with formats to use decimal dot instead of comma and to remove the "г." from the date format:
+ - numbers.json, line 18: "decimal": ".",
+ - ca-gregorian.json, line 314: "short": "d.MM.yy"
+ - ca-gregorian.json, line 372: "yMd": "d.MM.y",
+
+The JSON-files listed above must be present in the specified directory
+
+In case "bg" is used as the locale, we must take care to remove the "г." from the short date format, e.g. in "global.asax.cs"
+        protected void Application_BeginRequest()
+        {
+            // Globalization: Model binding DateTimes with ASP.Net MVC
+            // http://www.hackered.co.uk/articles/globalization-model-binding-datetimes-with-asp-net-mvc
+            var culture = (CultureInfo)System.Threading.Thread.CurrentThread.CurrentCulture.Clone();
+            culture.DateTimeFormat.ShortDatePattern = System.Configuration.ConfigurationManager.AppSettings["DateFormat"];
+            System.Threading.Thread.CurrentThread.CurrentCulture = culture;
+			...
+		}
+
+See https://johnnyreilly.github.io/jQuery.Validation.Unobtrusive.Native/AdvancedDemo/Globalize.html
+
+* Variant 2: use moment.js
+
+The following lines must be included in "_Layout.cshtml":
+
+	<script src="~/Scripts/moment.js"></script>
+
+	<script>
+        $(document).ready(function () {
+            $.validator.methods.date = function (value, element) {
+                return this.optional(element) || moment(value, "DD.MM.YYYY", true).isValid(); //moment(value).format("@System.Configuration.ConfigurationManager.AppSettings["DateFormat"]");
+            }
+        });
+    </script>
+
+	Capital letters must be used, othrwise validation is not carried out correctly.
+
+* The Datepicker localization
+
+The following lines must be included in "_Layout.cshtml":
+
+    <script src="~/Scripts/bootstrap.min.js"></script>
+    <script src="~/Scripts/bootstrap-datepicker.min.js"></script>
+    <script src="~/Scripts/bootstrap-datepicker.bg.min.js"></script>
+	
+	<script>
+        $('input.datepicker').datepicker({
+            language: "@System.Threading.Thread.CurrentThread.CurrentCulture.TwoLetterISOLanguageName",
+            format: "@System.Threading.Thread.CurrentThread.CurrentCulture.DateTimeFormat.ShortDatePattern.Replace('M', 'm')",
+            weekStart: @((int)System.Threading.Thread.CurrentThread.CurrentCulture.DateTimeFormat.FirstDayOfWeek),
+            todayBtn: "linked"
+        });
+	</script>
+
+It is supposed that the "г." from the short date format has been removed as shown above.
+If "г." is left in the format, the calendar in the datepicker is not automatically positioned on the selected date, but on the current date instead.
+The month in the date format must be lower case, otherwise the name of the month is used by the datepicker.
+
+
+* Common Validation requirements
+
+In order for client side validation to be enabled, it must be specified in web.config:
+  <appSettings>
+    <add key="ClientValidationEnabled" value="true" />
+    <add key="UnobtrusiveJavaScriptEnabled" value="true" />
+  </appSettings>
+
+The following lines must be included in "_Layout.cshtml":
+
+    <script src="~/Scripts/jquery-3.3.1.min.js"></script>
+    <script src="~/Scripts/jquery.validate.min.js"></script>
+    <script src="~/Scripts/jquery.validate.unobtrusive.min.js"></script>
+
+If we want to have visual feedback of the validation, we must also include:
+    <script src="~/Scripts/jquery.validate.unobtrusive.bootstrap.js"></script>
+
+This package is the jQuery Unobtrusive Validation Bootstrap By David Haney; the other one did not produce any visual effect

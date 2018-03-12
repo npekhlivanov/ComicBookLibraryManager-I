@@ -25,7 +25,7 @@
             {
                 <tr>
                     <td>@comicBook.ComicBook.DisplayText</td>
-                    <td>@comicBook.ComicBook.PublishedOn.ToString("MM/dd/yyyy")</td>
+                    <td>@comicBook.ComicBook.PublishedOn.ToShortDateString()</td>
                     <td>@comicBook.Role.Name</td>
                 </tr>
             }

@@ -41,7 +41,8 @@ namespace ComicBookShared.Data
 
             if (includeArtists)
             {
-                comicBookQuery = comicBookQuery.Include(cb => cb.Artists.Select(a => a.Artist))
+                comicBookQuery = comicBookQuery
+                    .Include(cb => cb.Artists.Select(a => a.Artist))
                     .Include(cb => cb.Artists.Select(a => a.Role));
             }
 

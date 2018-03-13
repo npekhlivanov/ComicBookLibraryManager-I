@@ -1,9 +1,8 @@
-﻿using ComicBookShared.Models;
-using System;
-using System.Collections.Generic;
+﻿using ComicBookShared.Data.Queries;
+using ComicBookShared.Models;
+using System.Data.Entity;
 using System.Linq;
 using System.Net;
-using System.Web;
 using System.Web.Mvc;
 
 namespace ComicBookLibraryManagerWebApp.Controllers
@@ -11,12 +10,12 @@ namespace ComicBookLibraryManagerWebApp.Controllers
     /// <summary>
     /// Controller for the "Series" section of the website.
     /// </summary>
-    public class SeriesController : Controller
+    public class SeriesController : BaseController
     {
         public ActionResult Index()
         {
-            // TODO Get the series list.
-            var series = new List<Series>();
+            // Get the series list
+            var series = Context.Series.ToList();
 
             return View(series);
         }
@@ -28,15 +27,15 @@ namespace ComicBookLibraryManagerWebApp.Controllers
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
 
-            // TODO Get the series.
-            var series = new Series();
+            // Get the series
+            var series = new GetSeriesQuery(Context).Execute(id.Value, includeComicBooks: true);
 
             if (series == null)
             {
                 return HttpNotFound();
             }
 
-            // Sort the comic books.
+            // Sort the comic books
             series.ComicBooks = series.ComicBooks
                 .OrderByDescending(cb => cb.IssueNumber)
                 .ToList();
@@ -58,7 +57,9 @@ namespace ComicBookLibraryManagerWebApp.Controllers
 
             if (ModelState.IsValid)
             {
-                // TODO Add the series.
+                // Add the series
+                Context.Series.Add(series);
+                Context.SaveChanges();
 
                 TempData["Message"] = "Your series was successfully added!";
 
@@ -75,8 +76,8 @@ namespace ComicBookLibraryManagerWebApp.Controllers
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
 
-            // TODO Get the series.
-            var series = new Series();
+            // Get the series
+            var series = new GetSeriesQuery(Context).Execute(id.Value, includeComicBooks: false);
 
             if (series == null)
             {
@@ -93,7 +94,11 @@ namespace ComicBookLibraryManagerWebApp.Controllers
 
             if (ModelState.IsValid)
             {
-                // TODO Update the series.
+                // Update the series
+                var currentSeries = Context.Series.Find(series.Id);
+                Context.Entry(currentSeries).CurrentValues.SetValues(series);
+                //Context.Entry(series).State = EntityState.Modified;
+                Context.SaveChanges();
 
                 TempData["Message"] = "Your series was successfully updated!";
 
@@ -110,8 +115,8 @@ namespace ComicBookLibraryManagerWebApp.Controllers
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
 
-            // TODO Get the series.
-            var series = new Series();
+            // Get the series
+            var series = new GetSeriesQuery(Context).Execute(id.Value, includeComicBooks: false);
 
             if (series == null)
             {
@@ -124,7 +129,10 @@ namespace ComicBookLibraryManagerWebApp.Controllers
         [HttpPost]
         public ActionResult Delete(int id)
         {
-            // TODO Delete the series.
+            // Delete the series
+            var series = Context.Series.Find(id);
+            Context.Series.Remove(series);
+            Context.SaveChanges();
 
             TempData["Message"] = "Your series was successfully deleted!";
 
@@ -138,17 +146,16 @@ namespace ComicBookLibraryManagerWebApp.Controllers
         /// <param name="series">The series to validate.</param>
         private void ValidateSeries(Series series)
         {
-            //// If there aren't any "Title" field validation errors...
-            //if (ModelState.IsValidField("Title"))
-            //{
-            //    // Then make sure that the provided title is unique.
-            //    // TODO Call method to check if the title is available.
-            //    if (false)
-            //    {
-            //        ModelState.AddModelError("Title",
-            //            "The provided Title is in use by another series.");
-            //    }
-            //}
+            // If there aren't any "Title" field validation errors...
+            if (ModelState.IsValidField("Title"))
+            {
+                // Then make sure that the provided title is unique.
+                var exists = Context.Series.Any(s => s.Title.Equals(series.Title, System.StringComparison.OrdinalIgnoreCase) && s.Id != series.Id);
+                if (exists)
+                {
+                    ModelState.AddModelError("Title", "The provided Title is in use by another series.");
+                }
+            }
         }
     }
 }

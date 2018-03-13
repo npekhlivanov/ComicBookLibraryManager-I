@@ -34,7 +34,7 @@ namespace ComicBookLibraryManagerWebApp.Controllers
                 ComicBook = comicBook
             };
 
-            viewModel.Init(Repository);
+            viewModel.Init(Context);
 
             return View(viewModel);
         }
@@ -63,7 +63,7 @@ namespace ComicBookLibraryManagerWebApp.Controllers
 
             // Prepare the view model for the view
             viewModel.ComicBook = _comicBooksRepository.Get(viewModel.ComicBookId, includeSeries: true);
-            viewModel.Init(Repository);
+            viewModel.Init(Context);
 
             return View(viewModel);
         }

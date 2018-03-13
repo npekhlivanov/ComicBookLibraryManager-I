@@ -25,7 +25,7 @@
         @foreach (var artist in Model)
         {
             <tr>
-                <td>@artist.Name</td>
+                <td>@Html.ActionLink(artist.Name, "Detail", new { Id = artist.Id })</td>
                 <td>
                     <div class="pull-right">
                         <a href="@Url.Action("Detail", new { id = artist.Id })" class="btn btn-primary btn-xs margin-right">

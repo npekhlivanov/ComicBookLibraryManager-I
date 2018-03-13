@@ -1,4 +1,5 @@
-﻿using ComicBookShared.Models;
+﻿using ComicBookShared.Data.Queries;
+using ComicBookShared.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,13 +12,12 @@ namespace ComicBookLibraryManagerWebApp.Controllers
     /// <summary>
     /// Controller for the "Artists" section of the website.
     /// </summary>
-    public class ArtistsController : Controller
+    public class ArtistsController : BaseController
     {
         public ActionResult Index()
         {
-            // TODO Get the artists list.
-            var artists = new List<Artist>();
-
+            // Get the artists list
+            var artists = new GetArtistListQuery(Context).Execute();
             return View(artists);
         }
 
@@ -28,8 +28,8 @@ namespace ComicBookLibraryManagerWebApp.Controllers
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
 
-            // TODO Get the artist.
-            var artist = new Artist();
+            // Get the artist
+            var artist = new GetArtistQuery(Context).Execute(id.Value, includeRelatedEntities: true);
 
             if (artist == null)
             {
@@ -59,7 +59,9 @@ namespace ComicBookLibraryManagerWebApp.Controllers
 
             if (ModelState.IsValid)
             {
-                // TODO Add the artist.
+                // Add the artist
+                Context.Artists.Add(artist);
+                Context.SaveChanges();
 
                 TempData["Message"] = "Your artist was successfully added!";
 
@@ -76,8 +78,8 @@ namespace ComicBookLibraryManagerWebApp.Controllers
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
 
-            // TODO Get the artist.
-            var artist = new Artist();
+            // Get the artist
+            var artist = new GetArtistQuery(Context).Execute(id.Value, includeRelatedEntities: false);
 
             if (artist == null)
             {
@@ -94,9 +96,24 @@ namespace ComicBookLibraryManagerWebApp.Controllers
 
             if (ModelState.IsValid)
             {
-                // TODO Update the artist.
+                // Update the artist
+                var unmodifiedArtist = Context.Artists.Find(artist.Id);
+                if (!CheckIfArtistExists(unmodifiedArtist))
+                {
+                    return RedirectToAction("Index");
+                }
 
-                TempData["Message"] = "Your artist was successfully updated!";
+                Context.Entry(unmodifiedArtist).CurrentValues.SetValues(artist);
+                if (Context.Entry(unmodifiedArtist).State != System.Data.Entity.EntityState.Unchanged)
+                {
+                    Context.SaveChanges();
+                    TempData["Message"] = "Your artist was successfully updated!";
+                }
+                else
+                {
+                    TempData["Message"] = "No changes to save!";
+                }
+
 
                 return RedirectToAction("Detail", new { id = artist.Id });
             }
@@ -111,9 +128,8 @@ namespace ComicBookLibraryManagerWebApp.Controllers
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
 
-            // TODO Get the artist.
-            var artist = new Artist();
-
+            // Get the artist
+            var artist = new GetArtistQuery(Context).Execute(id.Value, includeRelatedEntities: false);
             if (artist == null)
             {
                 return HttpNotFound();
@@ -125,11 +141,32 @@ namespace ComicBookLibraryManagerWebApp.Controllers
         [HttpPost]
         public ActionResult Delete(int id)
         {
-            // TODO Delete the artist.
+            // Delete the artist
+            var artist = Context.Artists.Find(id);
+            if (!CheckIfArtistExists(artist))
+            {
+                return RedirectToAction("Index");
+                //return View(new Artist());
+            }
+
+            Context.Artists.Remove(artist);
+            Context.SaveChanges();
 
             TempData["Message"] = "Your artist was successfully deleted!";
 
             return RedirectToAction("Index");
+        }
+
+        private bool CheckIfArtistExists(Artist artist)
+        {
+            if (artist == null)
+            {
+                TempData["Message"] = "The artist has been deleted by another user!";
+                //ModelState.AddModelError(string.Empty, "The artist has been deleted by another user");
+                return false;
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -139,17 +176,17 @@ namespace ComicBookLibraryManagerWebApp.Controllers
         /// <param name="artist">The artist to validate.</param>
         private void ValidateArtist(Artist artist)
         {
-            //// If there aren't any "Name" field validation errors...
-            //if (ModelState.IsValidField("Name"))
-            //{
-            //    // Then make sure that the provided name is unique.
-            //    // TODO Call method to check if the artist name is available.
-            //    if (false)
-            //    {
-            //        ModelState.AddModelError("Name",
-            //            "The provided Name is in use by another artist.");
-            //    }
-            //}
+            // If there aren't any "Name" field validation errors...
+            if (ModelState.IsValidField("Name"))
+            {
+                // Then make sure that the provided name is unique.
+                var exists = Context.Artists.Any(a => a.Name.Equals(artist.Name, StringComparison.InvariantCultureIgnoreCase) && a.Id != artist.Id);
+                if (exists)
+                {
+                    ModelState.AddModelError("Name",
+                        "The provided Name is in use by another artist.");
+                }
+            }
         }
     }
 }

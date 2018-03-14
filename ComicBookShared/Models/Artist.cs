@@ -1,23 +1,21 @@
-﻿using System;
+﻿using ComicBookShared.Data;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ComicBookShared.Models
 {
     /// <summary>
     /// Represents a comic book artist.
     /// </summary>
-    public class Artist
+    public class Artist : BaseEntity
     {
         public Artist()
         {
             ComicBooks = new List<ComicBookArtist>();
         }
 
-        public int Id { get; set; }
+        //public int Id { get; set; }
+
         [Required, StringLength(100)]
         public string Name { get; set; }
         

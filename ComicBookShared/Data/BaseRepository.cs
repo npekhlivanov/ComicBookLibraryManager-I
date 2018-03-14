@@ -32,6 +32,9 @@ namespace ComicBookShared.Data
 
         public virtual void Update(TEntity entity)
         {
+            //var set = Context.Set<TEntity>();
+            //var entityInDb = set.Find(entity.Id);
+            //Context.Entry(entityInDb).CurrentValues.SetValues(entity);
             Context.Entry<TEntity>(entity).State = EntityState.Modified;
             Context.SaveChanges();
         }

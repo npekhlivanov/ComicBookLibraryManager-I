@@ -60,8 +60,9 @@ namespace ComicBookLibraryManagerWebApp.Controllers
             if (ModelState.IsValid)
             {
                 // Add the artist
-                Context.Artists.Add(artist);
-                Context.SaveChanges();
+                Context.Add<Artist>(artist);
+                //Context.Artists.Add(artist);
+                //Context.SaveChanges();
 
                 TempData["Message"] = "Your artist was successfully added!";
 
@@ -97,22 +98,31 @@ namespace ComicBookLibraryManagerWebApp.Controllers
             if (ModelState.IsValid)
             {
                 // Update the artist
-                var unmodifiedArtist = Context.Artists.Find(artist.Id);
-                if (!CheckIfArtistExists(unmodifiedArtist))
+                if (Context.Update<Artist>(artist))
                 {
-                    return RedirectToAction("Index");
-                }
-
-                Context.Entry(unmodifiedArtist).CurrentValues.SetValues(artist);
-                if (Context.Entry(unmodifiedArtist).State != System.Data.Entity.EntityState.Unchanged)
-                {
-                    Context.SaveChanges();
                     TempData["Message"] = "Your artist was successfully updated!";
                 }
                 else
                 {
                     TempData["Message"] = "No changes to save!";
                 }
+
+                //var unmodifiedArtist = Context.Artists.Find(artist.Id);
+                //if (!CheckIfArtistExists(unmodifiedArtist))
+                //{
+                //    return RedirectToAction("Index");
+                //}
+
+                //Context.Entry(unmodifiedArtist).CurrentValues.SetValues(artist);
+                //if (Context.Entry(unmodifiedArtist).State != System.Data.Entity.EntityState.Unchanged)
+                //{
+                //    Context.SaveChanges();
+                //    TempData["Message"] = "Your artist was successfully updated!";
+                //}
+                //else
+                //{
+                //    TempData["Message"] = "No changes to save!";
+                //}
 
 
                 return RedirectToAction("Detail", new { id = artist.Id });
@@ -142,17 +152,26 @@ namespace ComicBookLibraryManagerWebApp.Controllers
         public ActionResult Delete(int id)
         {
             // Delete the artist
-            var artist = Context.Artists.Find(id);
-            if (!CheckIfArtistExists(artist))
+            if (!Context.Delete<Artist>(id))
             {
-                return RedirectToAction("Index");
-                //return View(new Artist());
+                TempData["Message"] = "The artist has been deleted by another user!";
+            }
+            else
+            {
+                TempData["Message"] = "Your artist was successfully deleted!";
             }
 
-            Context.Artists.Remove(artist);
-            Context.SaveChanges();
+            //var artist = Context.Artists.Find(id);
+            //if (!CheckIfArtistExists(artist))
+            //{
+            //    return RedirectToAction("Index");
+            //    //return View(new Artist());
+            //}
 
-            TempData["Message"] = "Your artist was successfully deleted!";
+            //Context.Artists.Remove(artist);
+            //Context.SaveChanges();
+
+            //TempData["Message"] = "Your artist was successfully deleted!";
 
             return RedirectToAction("Index");
         }

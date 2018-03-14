@@ -58,8 +58,9 @@ namespace ComicBookLibraryManagerWebApp.Controllers
             if (ModelState.IsValid)
             {
                 // Add the series
-                Context.Series.Add(series);
-                Context.SaveChanges();
+                Context.Add(Context.Series, series);
+                //Context.Series.Add(series);
+                //Context.SaveChanges();
 
                 TempData["Message"] = "Your series was successfully added!";
 
@@ -95,12 +96,20 @@ namespace ComicBookLibraryManagerWebApp.Controllers
             if (ModelState.IsValid)
             {
                 // Update the series
-                var currentSeries = Context.Series.Find(series.Id);
-                Context.Entry(currentSeries).CurrentValues.SetValues(series);
-                //Context.Entry(series).State = EntityState.Modified;
-                Context.SaveChanges();
+                if (Context.Update<Series>(Context.Series, series))
+                {
+                    TempData["Message"] = "Your series was successfully updated!";
+                }
+                else
+                {
+                    TempData["Message"] = "No changes to save!";
+                }
 
-                TempData["Message"] = "Your series was successfully updated!";
+                //var currentSeries = Context.Series.Find(series.Id);
+                //Context.Entry(currentSeries).CurrentValues.SetValues(series);
+                //Context.SaveChanges();
+
+                //TempData["Message"] = "Your series was successfully updated!";
 
                 return RedirectToAction("Detail", new { id = series.Id });
             }
@@ -130,11 +139,20 @@ namespace ComicBookLibraryManagerWebApp.Controllers
         public ActionResult Delete(int id)
         {
             // Delete the series
-            var series = Context.Series.Find(id);
-            Context.Series.Remove(series);
-            Context.SaveChanges();
+            if (Context.Delete<Series>(Context.Series, id))
+            {
+                TempData["Message"] = "Your series was successfully deleted!";
+            }
+            else
+            {
+                TempData["Message"] = "The artist has been deleted by another user!";
+            }
 
-            TempData["Message"] = "Your series was successfully deleted!";
+            //var series = Context.Series.Find(id);
+            //Context.Series.Remove(series);
+            //Context.SaveChanges();
+
+            //TempData["Message"] = "Your series was successfully deleted!";
 
             return RedirectToAction("Index");
         }

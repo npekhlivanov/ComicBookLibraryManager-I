@@ -1,10 +1,8 @@
 ﻿using ComicBookShared.Data.Queries;
 using ComicBookShared.Models;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Web;
 using System.Web.Mvc;
 
 namespace ComicBookLibraryManagerWebApp.Controllers
@@ -124,7 +122,6 @@ namespace ComicBookLibraryManagerWebApp.Controllers
                 //    TempData["Message"] = "No changes to save!";
                 //}
 
-
                 return RedirectToAction("Detail", new { id = artist.Id });
             }
 
@@ -176,17 +173,16 @@ namespace ComicBookLibraryManagerWebApp.Controllers
             return RedirectToAction("Index");
         }
 
-        private bool CheckIfArtistExists(Artist artist)
-        {
-            if (artist == null)
-            {
-                TempData["Message"] = "The artist has been deleted by another user!";
-                //ModelState.AddModelError(string.Empty, "The artist has been deleted by another user");
-                return false;
-            }
+        //private bool CheckIfArtistExists(Artist artist)
+        //{
+        //    if (artist == null)
+        //    {
+        //        TempData["Message"] = "The artist has been deleted by another user!";
+        //        return false;
+        //    }
 
-            return true;
-        }
+        //    return true;
+        //}
 
         /// <summary>
         /// Validates an artist on the server 
@@ -199,7 +195,7 @@ namespace ComicBookLibraryManagerWebApp.Controllers
             if (ModelState.IsValidField("Name"))
             {
                 // Then make sure that the provided name is unique.
-                var exists = Context.Artists.Any(a => a.Name.Equals(artist.Name, StringComparison.InvariantCultureIgnoreCase) && a.Id != artist.Id);
+                var exists = Context.Artists.Any(a => a.Name.Equals(artist.Name, StringComparison.InvariantCultureIgnoreCase) && a.Id != artist.Id && !a.IsDeleted);
                 if (exists)
                 {
                     ModelState.AddModelError("Name",

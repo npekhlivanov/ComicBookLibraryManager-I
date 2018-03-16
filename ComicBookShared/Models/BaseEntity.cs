@@ -1,26 +1,35 @@
-﻿using ComicBookShared.Data;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Entity;
+using System.Reflection;
 
 namespace ComicBookShared.Models
 {
     public abstract class BaseEntity
     {
         public int Id { get; set; }
+
+        //[NotMapped]
+        //public virtual bool EnableLogicalDelete { get => false; }
     }
 
-    public abstract class BaseContext : DbContext
-    {
-        public void Add(BaseEntity entity, DbSet<BaseEntity> dbSet)
-        {
-            dbSet.Add(entity);
-            SaveChanges();
-        }
-    }
-
-    public static class ContextExtensions
+    public static class ContextCrudExtensions
     {
         public static bool UpdateAllFields = false;
         public static bool FindBeforeDelete = true;
+
+        //public static IQueryable<TEntity> GetList<TEntity>(this DbContext context, DbSet<TEntity> dbSet)
+        //    where TEntity: BaseEntity
+        //{
+        //    var list = dbSet.AsQueryable();
+        //    var entity = list.FirstOrDefault();
+        //    if (entity != null && entity.EnableLogicalDelete)
+        //    {
+        //        var property = typeof(TEntity).GetProperty("IsDeleted");
+        //        list = list.Where(e => (bool)property.GetValue(e) == false);
+        //    }
+
+        //    return list;
+        //}
 
         public static void Add<TEntity>(this DbContext context, DbSet<TEntity> dbSet, TEntity entity) 
             where TEntity : BaseEntity
@@ -34,8 +43,7 @@ namespace ComicBookShared.Models
            where TEntity : BaseEntity
         {
             var dbSet = context.GetDbSet<TEntity>();
-            dbSet.Add(entity);
-            context.SaveChanges();
+            Add<TEntity>(context, dbSet, entity);
         }
 
         public static bool Update<TEntity>(this DbContext context, DbSet<TEntity> dbSet, TEntity entity)
@@ -68,25 +76,28 @@ namespace ComicBookShared.Models
         public static bool Update<TEntity>(this DbContext context, TEntity entity)
            where TEntity : BaseEntity
         {
-            if (UpdateAllFields)
+            var dbSet = UpdateAllFields ? null : context.GetDbSet<TEntity>();
+            return Update<TEntity>(context, dbSet, entity);
+
+        }
+
+        private static bool FindAndDelete<TEntity>(this DbContext context, DbSet<TEntity> dbSet, int id, PropertyInfo isDeletedProperty)
+            where TEntity : BaseEntity, new()
+        {
+            var entityInDb = dbSet.Find(id);
+            if (entityInDb == null)
             {
-                context.Entry(entity).State = EntityState.Modified;
+                return false;
+            }
+
+            if (isDeletedProperty != null)
+            {
+                isDeletedProperty.SetValue(entityInDb, true);
+                context.Entry(entityInDb).State = EntityState.Modified;
             }
             else
             {
-                var dbSet = context.GetDbSet<TEntity>();
-                var entityInDb = dbSet.Find(entity.Id);
-                if (entityInDb == null)
-                {
-                    return false;
-                }
-
-                var entry = context.Entry(entityInDb);
-                entry.CurrentValues.SetValues(entity);
-                if (entry.State == EntityState.Unchanged)
-                {
-                    return false;
-                }
+                dbSet.Remove(entityInDb);
             }
 
             context.SaveChanges();
@@ -96,22 +107,14 @@ namespace ComicBookShared.Models
         public static bool Delete<TEntity>(this DbContext context, DbSet<TEntity> dbSet, int id)
             where TEntity : BaseEntity, new()
         {
-            if (FindBeforeDelete)
+            var isDeletedProperty = typeof(TEntity).GetProperty("IsDeleted");
+            if (FindBeforeDelete || isDeletedProperty != null)
             {
-                var entityInDb = dbSet.Find(id);
-                if (entityInDb == null)
-                {
-                    return false;
-                }
-
-                dbSet.Remove(entityInDb);
-            }
-            else
-            {
-                var entity = new TEntity() { Id = id };
-                context.Entry(entity).State = EntityState.Deleted;
+                return FindAndDelete<TEntity>(context, dbSet, id, isDeletedProperty);
             }
 
+            var entity = new TEntity() { Id = id };
+            context.Entry(entity).State = EntityState.Deleted;
             context.SaveChanges();
             return true;
         }
@@ -119,25 +122,8 @@ namespace ComicBookShared.Models
         public static bool Delete<TEntity>(this DbContext context, int id)
             where TEntity : BaseEntity, new()
         {
-            if (FindBeforeDelete)
-            {
-                var dbSet = context.GetDbSet<TEntity>();
-                var entityInDb = dbSet.Find(id);
-                if (entityInDb == null)
-                {
-                    return false;
-                }
-
-                dbSet.Remove(entityInDb);
-            }
-            else
-            {
-                var entity = new TEntity() { Id = id };
-                context.Entry(entity).State = EntityState.Deleted;
-            }
-
-            context.SaveChanges();
-            return true;
+            var dbSet = context.GetDbSet<TEntity>();
+            return Delete<TEntity>(context, dbSet, id);
         }
 
         private static DbSet<TEntity> GetDbSet<TEntity>(this DbContext context) 
@@ -151,6 +137,7 @@ namespace ComicBookShared.Models
 
             return dbSet;
         }
+
         //public static void AddEntity(this DbContext context, DbSet<BaseEntity> dbSet, BaseEntity entity)
         //{
         //    dbSet.Add(entity);

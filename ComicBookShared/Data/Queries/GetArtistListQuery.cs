@@ -13,6 +13,7 @@ namespace ComicBookShared.Data.Queries
         public IList<Artist> Execute()
         {
             return Context.Artists
+                .Where(a => !a.IsDeleted)
                 .OrderBy(a => a.Name)
                 .ToList();
         }

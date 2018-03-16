@@ -1,6 +1,5 @@
 ﻿using ComicBookShared.Data.Queries;
 using ComicBookShared.Models;
-using System.Data.Entity;
 using System.Linq;
 using System.Net;
 using System.Web.Mvc;
@@ -59,8 +58,6 @@ namespace ComicBookLibraryManagerWebApp.Controllers
             {
                 // Add the series
                 Context.Add(Context.Series, series);
-                //Context.Series.Add(series);
-                //Context.SaveChanges();
 
                 TempData["Message"] = "Your series was successfully added!";
 
@@ -105,12 +102,6 @@ namespace ComicBookLibraryManagerWebApp.Controllers
                     TempData["Message"] = "No changes to save!";
                 }
 
-                //var currentSeries = Context.Series.Find(series.Id);
-                //Context.Entry(currentSeries).CurrentValues.SetValues(series);
-                //Context.SaveChanges();
-
-                //TempData["Message"] = "Your series was successfully updated!";
-
                 return RedirectToAction("Detail", new { id = series.Id });
             }
 
@@ -126,7 +117,6 @@ namespace ComicBookLibraryManagerWebApp.Controllers
 
             // Get the series
             var series = new GetSeriesQuery(Context).Execute(id.Value, includeComicBooks: false);
-
             if (series == null)
             {
                 return HttpNotFound();
@@ -147,12 +137,6 @@ namespace ComicBookLibraryManagerWebApp.Controllers
             {
                 TempData["Message"] = "The artist has been deleted by another user!";
             }
-
-            //var series = Context.Series.Find(id);
-            //Context.Series.Remove(series);
-            //Context.SaveChanges();
-
-            //TempData["Message"] = "Your series was successfully deleted!";
 
             return RedirectToAction("Index");
         }

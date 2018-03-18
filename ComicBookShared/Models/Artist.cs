@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace ComicBookShared.Models
@@ -17,6 +18,14 @@ namespace ComicBookShared.Models
         public string Name { get; set; }
 
         public bool IsDeleted { get; set; }
+
+        public DateTime? DeletedOn { get; set; }
+
+        [DataType(DataType.DateTime)]
+        public DateTime? CreatedOn { get; set; }
+
+        [DataType(DataType.DateTime)]
+        public DateTime? ModifiedOn { get; set; }
 
         public ICollection<ComicBookArtist> ComicBooks { get; set; }
     }

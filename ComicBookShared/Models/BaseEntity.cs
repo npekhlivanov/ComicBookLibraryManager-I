@@ -1,5 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
 using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
 using System.Reflection;
 
 namespace ComicBookShared.Models
@@ -34,7 +35,12 @@ namespace ComicBookShared.Models
         public static void Add<TEntity>(this DbContext context, DbSet<TEntity> dbSet, TEntity entity) 
             where TEntity : BaseEntity
         {
-            var entitySet = context.Set<TEntity>();
+            var createdOnProperty = typeof(TEntity).GetProperty("CreatedOn");
+            if (createdOnProperty != null)
+            {
+                createdOnProperty.SetValue(entity, DateTime.Now);
+            }
+
             dbSet.Add(entity);
             context.SaveChanges();
         }
@@ -49,9 +55,13 @@ namespace ComicBookShared.Models
         public static bool Update<TEntity>(this DbContext context, DbSet<TEntity> dbSet, TEntity entity)
             where TEntity : BaseEntity
         {
+            var modifiedOnProperty = typeof(TEntity).GetProperty("ModifiedOn");
+            TEntity entryToUpdate;
             if (UpdateAllFields)
             {
-                context.Entry(entity).State = EntityState.Modified;
+                var entry = context.Entry(entity);
+                entry.State = EntityState.Modified;
+                entryToUpdate = entity;
             }
             else
             {
@@ -61,12 +71,34 @@ namespace ComicBookShared.Models
                     return false;
                 }
 
+                entryToUpdate = entityInDb;
                 var entry = context.Entry(entityInDb);
                 entry.CurrentValues.SetValues(entity);
+
+                if (typeof(TEntity).GetProperty("CreatedOn") != null)
+                {
+                    entry.Property("CreatedOn").IsModified =false;
+                }
+
+                if (typeof(TEntity).GetProperty("DeletedOn") != null)
+                {
+                    entry.Property("DeletedOn").IsModified = false;
+                }
+
+                if (modifiedOnProperty != null)
+                {
+                    entry.Property("ModifiedOn").IsModified = false;
+                }
+
                 if (entry.State == EntityState.Unchanged)
                 {
                     return false;
                 }
+            }
+
+            if (modifiedOnProperty != null)
+            {
+                modifiedOnProperty.SetValue(entryToUpdate, DateTime.Now);
             }
 
             context.SaveChanges();
@@ -78,7 +110,6 @@ namespace ComicBookShared.Models
         {
             var dbSet = UpdateAllFields ? null : context.GetDbSet<TEntity>();
             return Update<TEntity>(context, dbSet, entity);
-
         }
 
         private static bool FindAndDelete<TEntity>(this DbContext context, DbSet<TEntity> dbSet, int id, PropertyInfo isDeletedProperty)
@@ -93,7 +124,24 @@ namespace ComicBookShared.Models
             if (isDeletedProperty != null)
             {
                 isDeletedProperty.SetValue(entityInDb, true);
-                context.Entry(entityInDb).State = EntityState.Modified;
+                var entry = context.Entry(entityInDb);
+                entry.State = EntityState.Modified;
+                
+                if (typeof(TEntity).GetProperty("CreatedOn") != null)
+                {
+                    entry.Property("CreatedOn").IsModified = false;
+                }
+
+                if (typeof(TEntity).GetProperty("ModifiedOn") != null)
+                { 
+                    entry.Property("ModifiedOn").IsModified = false;
+                }
+
+                var deletedOnProperty = typeof(TEntity).GetProperty("DeletedOn");
+                if (deletedOnProperty != null)
+                {
+                    deletedOnProperty.SetValue(entityInDb, DateTime.Now);
+                }
             }
             else
             {

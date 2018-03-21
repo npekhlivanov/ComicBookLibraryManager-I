@@ -21,17 +21,11 @@ namespace ComicBookLibraryManagerWebApp.Controllers
 
         public ActionResult Detail(int? id)
         {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-
-            // Get the artist
-            var artist = new GetArtistQuery(Context).Execute(id.Value, includeRelatedEntities: true);
-
+            Artist getMethod(int x) => new GetArtistQuery(Context).Execute(id.Value, includeRelatedEntities: true);
+            var artist = GetEntity<Artist>(id, getMethod, out ActionResult resultIfNotFound);
             if (artist == null)
             {
-                return HttpNotFound();
+                return resultIfNotFound;
             }
 
             // Sort the comic books.
@@ -50,36 +44,30 @@ namespace ComicBookLibraryManagerWebApp.Controllers
             return View(artist);
         }
 
-        [HttpPost]
-        public ActionResult Add(Artist artist)
+        [HttpPost, ActionName("Add")]
+        [ValidateAntiForgeryToken]
+        public ActionResult Create([Bind(Include = "Name")] Artist artist)
         {
             ValidateArtist(artist);
-
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                // Add the artist
-                Context.Add<Artist>(artist);
-                //Context.Artists.Add(artist);
-                //Context.SaveChanges();
-
-                TempData["Message"] = "Your artist was successfully added!";
-
-                return RedirectToAction("Detail", new { id = artist.Id });
+                return View(artist);
             }
 
-            return View(artist);
+            // Add the artist
+            Context.Add<Artist>(artist);
+            //Context.Artists.Add(artist);
+            //Context.SaveChanges();
+
+            TempData["Message"] = "Your artist was successfully added!";
+
+            return RedirectToAction("Detail", new { id = artist.Id });
         }
 
         public ActionResult Edit(int? id)
         {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-
-            // Get the artist
-            var artist = new GetArtistQuery(Context).Execute(id.Value, includeRelatedEntities: false);
-
+            Artist getMethod(int x) => new GetArtistQuery(Context).Execute(x, includeRelatedEntities: false);
+            var artist = GetEntity<Artist>(id, getMethod, out ActionResult resultIfNotFoound);
             if (artist == null)
             {
                 return HttpNotFound();
@@ -88,101 +76,74 @@ namespace ComicBookLibraryManagerWebApp.Controllers
             return View(artist);
         }
 
-        [HttpPost]
-        public ActionResult Edit(Artist artist)
+        [HttpPost, ActionName("Edit")]
+        [ValidateAntiForgeryToken]
+        public ActionResult Update([Bind(Include = "Id,Name")] Artist artist)
         {
             ValidateArtist(artist);
-
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                // Update the artist
-                if (Context.Update<Artist>(artist))
-                {
-                    TempData["Message"] = "Your artist was successfully updated!";
-                }
-                else
-                {
-                    TempData["Message"] = "No changes to save!";
-                }
-
-                //var unmodifiedArtist = Context.Artists.Find(artist.Id);
-                //if (!CheckIfArtistExists(unmodifiedArtist))
-                //{
-                //    return RedirectToAction("Index");
-                //}
-
-                //Context.Entry(unmodifiedArtist).CurrentValues.SetValues(artist);
-                //if (Context.Entry(unmodifiedArtist).State != System.Data.Entity.EntityState.Unchanged)
-                //{
-                //    Context.SaveChanges();
-                //    TempData["Message"] = "Your artist was successfully updated!";
-                //}
-                //else
-                //{
-                //    TempData["Message"] = "No changes to save!";
-                //}
-
-                return RedirectToAction("Detail", new { id = artist.Id });
+                return View(artist);
             }
 
-            return View(artist);
+            // Update the artist
+            if (Context.Update<Artist>(artist)) // TODO: implement 3-state logic
+            {
+                TempData["Message"] = "Your artist was successfully updated!";
+            }
+            else
+            {
+                TempData["Message"] = "No changes to save!";
+            }
+
+            //var unmodifiedArtist = Context.Artists.Find(artist.Id);
+            //if (!CheckIfArtistExists(unmodifiedArtist))
+            //{
+            //    return RedirectToAction("Index");
+            //}
+
+            //Context.Entry(unmodifiedArtist).CurrentValues.SetValues(artist);
+            //if (Context.Entry(unmodifiedArtist).State != System.Data.Entity.EntityState.Unchanged)
+            //{
+            //    Context.SaveChanges();
+            //    TempData["Message"] = "Your artist was successfully updated!";
+            //}
+            //else
+            //{
+            //    TempData["Message"] = "No changes to save!";
+            //}
+
+            return RedirectToAction("Detail", new { id = artist.Id });
         }
 
         public ActionResult Delete(int? id)
         {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-
-            // Get the artist
-            var artist = new GetArtistQuery(Context).Execute(id.Value, includeRelatedEntities: false);
+            Artist getMethod(int x) => new GetArtistQuery(Context).Execute(id.Value, includeRelatedEntities: false);
+            var artist = GetEntity<Artist>(id, getMethod, out ActionResult resultIfNotFound);
             if (artist == null)
             {
-                return HttpNotFound();
+                return resultIfNotFound;
             }
 
             return View(artist);
         }
 
-        [HttpPost]
-        public ActionResult Delete(int id)
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public ActionResult DeleteConfirmed(int id)
         {
             // Delete the artist
             if (!Context.Delete<Artist>(id))
             {
-                TempData["Message"] = "The artist has been deleted by another user!";
+                TempData["Message"] = string.Format("The artist \"{0}\" has been deleted by another user!", TempData["ItemName"]);
             }
             else
             {
-                TempData["Message"] = "Your artist was successfully deleted!";
+                TempData["Message"] = string.Format("The artist \"{0}\" was successfully deleted!", TempData["ItemName"]);
             }
-
-            //var artist = Context.Artists.Find(id);
-            //if (!CheckIfArtistExists(artist))
-            //{
-            //    return RedirectToAction("Index");
-            //    //return View(new Artist());
-            //}
-
-            //Context.Artists.Remove(artist);
-            //Context.SaveChanges();
-
-            //TempData["Message"] = "Your artist was successfully deleted!";
 
             return RedirectToAction("Index");
         }
-
-        //private bool CheckIfArtistExists(Artist artist)
-        //{
-        //    if (artist == null)
-        //    {
-        //        TempData["Message"] = "The artist has been deleted by another user!";
-        //        return false;
-        //    }
-
-        //    return true;
-        //}
 
         /// <summary>
         /// Validates an artist on the server 

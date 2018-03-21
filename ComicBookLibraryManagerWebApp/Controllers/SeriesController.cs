@@ -21,17 +21,11 @@ namespace ComicBookLibraryManagerWebApp.Controllers
 
         public ActionResult Detail(int? id)
         {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-
-            // Get the series
-            var series = new GetSeriesQuery(Context).Execute(id.Value, includeComicBooks: true);
-
+            Series getMethod(int x) => new GetSeriesQuery(Context).Execute(x, includeComicBooks: true);
+            var series = GetEntity<Series>(id, getMethod, out ActionResult resultIfNotFound);
             if (series == null)
             {
-                return HttpNotFound();
+                return resultIfNotFound;
             }
 
             // Sort the comic books
@@ -49,93 +43,84 @@ namespace ComicBookLibraryManagerWebApp.Controllers
             return View(series);
         }
 
-        [HttpPost]
-        public ActionResult Add(Series series)
+        [HttpPost, ActionName("Add")]
+        [ValidateAntiForgeryToken]
+        public ActionResult Create([Bind(Include = "Title")] Series series)
         {
             ValidateSeries(series);
-
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                // Add the series
-                Context.Add(Context.Series, series);
-
-                TempData["Message"] = "Your series was successfully added!";
-
-                return RedirectToAction("Detail", new { id = series.Id });
+                return View(series);
             }
 
-            return View(series);
-        }
+            // Add the series
+            Context.Add(Context.Series, series);
+
+            TempData["Message"] = "Your series was successfully added!";
+
+            return RedirectToAction("Detail", new { id = series.Id });
+       }
 
         public ActionResult Edit(int? id)
         {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-
-            // Get the series
-            var series = new GetSeriesQuery(Context).Execute(id.Value, includeComicBooks: false);
-
+            Series getMethod(int x) => new GetSeriesQuery(Context).Execute(x, includeComicBooks: false);
+            var series = GetEntity<Series>(id, getMethod, out ActionResult resultIfNotFound);
             if (series == null)
             {
-                return HttpNotFound();
+                return resultIfNotFound;
             }
 
             return View(series);
         }
 
-        [HttpPost]
-        public ActionResult Edit(Series series)
+        [HttpPost, ActionName("Edit")]
+        [ValidateAntiForgeryToken]
+        public ActionResult Update([Bind(Include = "Id, Title, Description")] Series series)
         {
             ValidateSeries(series);
-
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                // Update the series
-                if (Context.Update<Series>(Context.Series, series))
-                {
-                    TempData["Message"] = "Your series was successfully updated!";
-                }
-                else
-                {
-                    TempData["Message"] = "No changes to save!";
-                }
-
-                return RedirectToAction("Detail", new { id = series.Id });
+               return View(series);
+            }
+            
+            // Update the series
+            if (Context.Update<Series>(Context.Series, series))
+            {
+                TempData["Message"] = "Your series was successfully updated!";
+            }
+            else
+            {
+                TempData["Message"] = "No changes to save!";
             }
 
-            return View(series);
+            return RedirectToAction("Detail", new { id = series.Id });
         }
+
 
         public ActionResult Delete(int? id)
         {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-
-            // Get the series
-            var series = new GetSeriesQuery(Context).Execute(id.Value, includeComicBooks: false);
+            Series getMethod(int x) => new GetSeriesQuery(Context).Execute(x, includeComicBooks: false);
+            var series = GetEntity<Series>(id, getMethod, out ActionResult resultIfNotFound);
             if (series == null)
             {
-                return HttpNotFound();
+                return resultIfNotFound;
             }
 
             return View(series);
         }
 
-        [HttpPost]
-        public ActionResult Delete(int id)
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public ActionResult DeleteConfirmed(int id)
         {
             // Delete the series
             if (Context.Delete<Series>(Context.Series, id))
             {
-                TempData["Message"] = "Your series was successfully deleted!";
+                TempData["Message"] = string.Format("The series \"{0}\" was successfully deleted!", TempData["ItemName"]);
             }
             else
             {
-                TempData["Message"] = "The artist has been deleted by another user!";
+                TempData["Message"] = string.Format("The series \"{0}\" has been deleted by another user!", TempData["ItemName"]);
             }
 
             return RedirectToAction("Index");

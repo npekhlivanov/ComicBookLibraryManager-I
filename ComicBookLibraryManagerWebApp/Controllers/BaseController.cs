@@ -1,4 +1,5 @@
 ﻿using ComicBookShared.Data;
+using System.Net;
 using System.Web.Mvc;
 
 namespace ComicBookLibraryManagerWebApp.Controllers
@@ -45,5 +46,28 @@ namespace ComicBookLibraryManagerWebApp.Controllers
         {
             base.OnActionExecuted(filterContext);
         }
+
+        protected delegate TEntity GetEntityDelegate<TEntity>(int id);
+
+        protected TEntity GetEntity<TEntity>(int? id, GetEntityDelegate<TEntity> getMethod, out ActionResult resultIfNotFound) 
+            where TEntity : class
+        {
+            if (!id.HasValue)
+            {
+                resultIfNotFound = new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return null;
+            }
+
+            var entity = getMethod(id.Value);
+            if (entity == null)
+            {
+                resultIfNotFound = HttpNotFound();
+                return null;
+            }
+
+            resultIfNotFound = null;
+            return entity;
+        }
+
     }
 }

@@ -18,7 +18,7 @@ namespace ComicBookShared.Data
         public Context()
         {
             // Not used anymore, since database initializer is now specified in web.config/etnityFramework/contexts may be removed
-            Database.Log = (message) => Debug.WriteLine(message);
+            //Database.Log = (message) => Debug.WriteLine(message);
         }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)

@@ -18,6 +18,7 @@ namespace ComicBookShared.Data
         public override IList<ComicBook> GetList()
         {
             return Context.ComicBooks
+                .AsNoTracking() // no entity objects are created by EF, relationship fixups are not available; suitable for retrieving  large number of records
                 .Include(cb => cb.Series)
                 .OrderBy(cb => cb.Series.Title)
                 .ThenBy(cb => cb.IssueNumber)
@@ -34,6 +35,26 @@ namespace ComicBookShared.Data
         public ComicBook Get(int id, bool includeSeries, bool includeArtists = false)
         {
             var comicBookQuery = Context.ComicBooks.Where(cb => cb.Id == id);
+#if !LAZY_LOADING
+            var comicBook = comicBookQuery.SingleOrDefault();
+            var comicBookEntry = Context.Entry(comicBook);
+            if (includeSeries)
+            {
+                comicBookEntry.Reference(cb => cb.Series).Load();
+            }
+
+            if (includeArtists)
+            {
+                comicBookEntry.Collection(cb => cb.Artists)
+                    .Query()
+                    .Include(a => a.Artist)
+                    .Include(a => a.Role)
+                    .ToList();
+            }
+
+            return comicBook;
+
+#else
             if (includeSeries)
             {
                 comicBookQuery = comicBookQuery.Include(cb => cb.Series);
@@ -47,6 +68,7 @@ namespace ComicBookShared.Data
             }
 
             return comicBookQuery.SingleOrDefault();
+#endif
         }
 
         /// <summary>

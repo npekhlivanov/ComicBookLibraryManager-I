@@ -32,7 +32,7 @@ namespace ComicBookShared.Models
         //    return list;
         //}
 
-        public static void Add<TEntity>(this DbContext context, DbSet<TEntity> dbSet, TEntity entity) 
+        public static int Add<TEntity>(this DbContext context, DbSet<TEntity> dbSet, TEntity entity) 
             where TEntity : BaseEntity
         {
             var createdOnProperty = typeof(TEntity).GetProperty("CreatedOn");
@@ -43,13 +43,14 @@ namespace ComicBookShared.Models
 
             dbSet.Add(entity);
             context.SaveChanges();
+            return entity.Id;
         }
 
-        public static void Add<TEntity>(this DbContext context, TEntity entity)
+        public static int Add<TEntity>(this DbContext context, TEntity entity)
            where TEntity : BaseEntity
         {
             var dbSet = context.GetDbSet<TEntity>();
-            Add<TEntity>(context, dbSet, entity);
+            return Add<TEntity>(context, dbSet, entity);
         }
 
         public static bool Update<TEntity>(this DbContext context, DbSet<TEntity> dbSet, TEntity entity)

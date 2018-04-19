@@ -21,20 +21,17 @@ namespace ComicBookLibraryManagerWebApp.Controllers
 
         public ActionResult Detail(int? id)
         {
-            Artist getMethod(int x) => new GetArtistQuery(Context).Execute(id.Value, includeRelatedEntities: true);
-            var artist = GetEntity<Artist>(id, getMethod, out ActionResult resultIfNotFound);
-            if (artist == null)
+            // use Lambda expression with multiple statements in its body to sort and prepare the view
+            return PrepareView<Artist>(id, x => new GetArtistQuery(Context).Execute(x, includeRelatedEntities: true), artist =>
             {
-                return resultIfNotFound;
-            }
+                // Sort the comic books
+                artist.ComicBooks = artist.ComicBooks
+                    .OrderBy(cb => cb.ComicBook.Series.Title)
+                    .OrderByDescending(cb => cb.ComicBook.IssueNumber)
+                    .ToList();
 
-            // Sort the comic books.
-            artist.ComicBooks = artist.ComicBooks
-                .OrderBy(cb => cb.ComicBook.Series.Title)
-                .OrderByDescending(cb => cb.ComicBook.IssueNumber)
-                .ToList();
-
-            return View(artist);
+                return View(artist);
+            });
         }
 
         public ActionResult Add()
@@ -66,14 +63,7 @@ namespace ComicBookLibraryManagerWebApp.Controllers
 
         public ActionResult Edit(int? id)
         {
-            Artist getMethod(int x) => new GetArtistQuery(Context).Execute(x, includeRelatedEntities: false);
-            var artist = GetEntity<Artist>(id, getMethod, out ActionResult resultIfNotFoound);
-            if (artist == null)
-            {
-                return HttpNotFound();
-            }
-
-            return View(artist);
+            return PrepareView<Artist>(id, x => new GetArtistQuery(Context).Execute(x, includeRelatedEntities: false), x => View(x));
         }
 
         [HttpPost, ActionName("Edit")]
@@ -118,14 +108,7 @@ namespace ComicBookLibraryManagerWebApp.Controllers
 
         public ActionResult Delete(int? id)
         {
-            Artist getMethod(int x) => new GetArtistQuery(Context).Execute(id.Value, includeRelatedEntities: false);
-            var artist = GetEntity<Artist>(id, getMethod, out ActionResult resultIfNotFound);
-            if (artist == null)
-            {
-                return resultIfNotFound;
-            }
-
-            return View(artist);
+            return PrepareView<Artist>(id, x => new GetArtistQuery(Context).Execute(x, includeRelatedEntities: false));
         }
 
         [HttpPost, ActionName("Delete")]

@@ -1,7 +1,6 @@
 ﻿using ComicBookShared.Data.Queries;
 using ComicBookShared.Models;
 using System.Linq;
-using System.Net;
 using System.Web.Mvc;
 
 namespace ComicBookLibraryManagerWebApp.Controllers
@@ -14,7 +13,7 @@ namespace ComicBookLibraryManagerWebApp.Controllers
         public ActionResult Index()
         {
             // Get the series list
-            var series = Context.Series.ToList();
+            var series = Repository.GetSeriesList();// Context.Series.ToList();
 
             return View(series);
         }
@@ -22,18 +21,16 @@ namespace ComicBookLibraryManagerWebApp.Controllers
         public ActionResult Detail(int? id)
         {
             Series getMethod(int x) => new GetSeriesQuery(Context).Execute(x, includeComicBooks: true);
-            var series = GetEntity<Series>(id, getMethod, out ActionResult resultIfNotFound);
-            if (series == null)
+            ActionResult prepareMethod(Series series)
             {
-                return resultIfNotFound;
+                // Sort the comic books
+                series.ComicBooks = series.ComicBooks
+                    .OrderByDescending(cb => cb.IssueNumber)
+                    .ToList();
+                return View(series);
             }
 
-            // Sort the comic books
-            series.ComicBooks = series.ComicBooks
-                .OrderByDescending(cb => cb.IssueNumber)
-                .ToList();
-
-            return View(series);
+            return PrepareView(id, getMethod, prepareMethod);
         }
 
         public ActionResult Add()
@@ -55,6 +52,7 @@ namespace ComicBookLibraryManagerWebApp.Controllers
 
             // Add the series
             Context.Add(Context.Series, series);
+            Repository.MarkSeriesModified();
 
             TempData["Message"] = "Your series was successfully added!";
 
@@ -63,14 +61,7 @@ namespace ComicBookLibraryManagerWebApp.Controllers
 
         public ActionResult Edit(int? id)
         {
-            Series getMethod(int x) => new GetSeriesQuery(Context).Execute(x, includeComicBooks: false);
-            var series = GetEntity<Series>(id, getMethod, out ActionResult resultIfNotFound);
-            if (series == null)
-            {
-                return resultIfNotFound;
-            }
-
-            return View(series);
+            return PrepareView<Series>(id, x => new GetSeriesQuery(Context).Execute(x, includeComicBooks: false));
         }
 
         [HttpPost, ActionName("Edit")]
@@ -87,6 +78,7 @@ namespace ComicBookLibraryManagerWebApp.Controllers
             if (Context.Update<Series>(Context.Series, series))
             {
                 TempData["Message"] = "Your series was successfully updated!";
+                Repository.MarkSeriesModified();
             }
             else
             {
@@ -99,14 +91,11 @@ namespace ComicBookLibraryManagerWebApp.Controllers
 
         public ActionResult Delete(int? id)
         {
+            // Variant 1: declare an anonymous method as delegate, the traditional way
+            //GetEntityDelegate<Series> func = delegate (int x) { return new GetSeriesQuery(Context).Execute(x, includeComicBooks: false); };
+            // Variant 2: use local function and lambda
             Series getMethod(int x) => new GetSeriesQuery(Context).Execute(x, includeComicBooks: false);
-            var series = GetEntity<Series>(id, getMethod, out ActionResult resultIfNotFound);
-            if (series == null)
-            {
-                return resultIfNotFound;
-            }
-
-            return View(series);
+            return PrepareView(id, getMethod);
         }
 
         [HttpPost, ActionName("Delete")]
@@ -117,6 +106,7 @@ namespace ComicBookLibraryManagerWebApp.Controllers
             if (Context.Delete<Series>(Context.Series, id))
             {
                 TempData["Message"] = string.Format("The series \"{0}\" was successfully deleted!", TempData["ItemName"]);
+                Repository.MarkSeriesModified();
             }
             else
             {

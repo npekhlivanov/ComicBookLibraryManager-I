@@ -12,15 +12,28 @@ namespace ComicBookShared.Data
             _context = context;
         }
 
+        const string SeriesListKey = "SeriesList";
         /// <summary>
         /// Get the series list
         /// </summary>
         /// <returns></returns>
         public IList<Series> GetSeriesList()
         {
-            return _context.Series
-                .OrderBy(s => s.Title)
-                .ToList();
+            var seriesList = EntityCache.Get<List<Series>>(SeriesListKey);
+            if (seriesList == null)
+            {
+                seriesList = _context.Series
+                    .OrderBy(s => s.Title)
+                    .ToList();
+                EntityCache.Add(SeriesListKey, seriesList);
+            }
+
+            return seriesList;
+        }
+
+        public void MarkSeriesModified()
+        {
+            EntityCache.Remove(SeriesListKey);
         }
 
         /// <summary>

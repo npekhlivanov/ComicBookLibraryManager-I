@@ -1,4 +1,5 @@
 ﻿using ComicBookShared.Data;
+using System;
 using System.Net;
 using System.Web.Mvc;
 
@@ -47,9 +48,10 @@ namespace ComicBookLibraryManagerWebApp.Controllers
             base.OnActionExecuted(filterContext);
         }
 
-        protected delegate TEntity GetEntityDelegate<TEntity>(int id);
+        // Declare a delagate to use the traditional way; alternatively, use Func<> 
+        //protected delegate TEntity GetEntityDelegate<TEntity>(int id);
 
-        protected TEntity GetEntity<TEntity>(int? id, GetEntityDelegate<TEntity> getMethod, out ActionResult resultIfNotFound) 
+        protected TEntity GetModel<TEntity>(int? id, Func<int, TEntity> getMethod, out ActionResult resultIfNotFound) 
             where TEntity : class
         {
             if (!id.HasValue)
@@ -58,16 +60,41 @@ namespace ComicBookLibraryManagerWebApp.Controllers
                 return null;
             }
 
-            var entity = getMethod(id.Value);
-            if (entity == null)
+            var model = getMethod(id.Value);
+            if (model == null)
             {
                 resultIfNotFound = HttpNotFound();
                 return null;
             }
 
             resultIfNotFound = null;
-            return entity;
+            return model;
         }
 
+        /// <summary>
+        /// Method to prepare a View with the data from a data entity of specified type
+        /// </summary>
+        /// <typeparam name="TEntity">The type of the data entity</typeparam>
+        /// <param name="id">The Id of the entity</param>
+        /// <param name="fetchMethod">Method to fetch the entity, e.g. from a DB/Repository/Service</param>
+        /// <param name="prepareMethod">Method to prepare the view from the entity fetched (optional)</param>
+        /// <returns>An ActionResult object to display</returns>
+        protected ActionResult PrepareView<TEntity>(int? id, Func<int, TEntity> fetchMethod, Func<TEntity, ActionResult> prepareMethod = null)
+            where TEntity : class
+        {
+            var model = GetModel(id, fetchMethod, out ActionResult resultIfNotFound);
+            if (model == null)
+            {
+                return resultIfNotFound;
+            }
+
+            if (prepareMethod == null)
+            {
+                return View(model);
+            }
+
+            // Invoke the method to prepare the view, e.g. by filling a view model
+            return prepareMethod(model);
+        }
     }
 }

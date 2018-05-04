@@ -42,13 +42,25 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BasicInvader.cs" />
     <Compile Include="Exceptions.cs" />
+    <Compile Include="FastInvader.cs" />
+    <Compile Include="Game.cs" />
     <Compile Include="IInvader.cs" />
+    <Compile Include="Invader.cs" />
+    <Compile Include="Level.cs" />
+    <Compile Include="LongRangeTower.cs" />
     <Compile Include="Map.cs" />
     <Compile Include="MapLocation.cs" />
     <Compile Include="Path.cs" />
     <Compile Include="Point.cs" />
+    <Compile Include="PowerfulTower.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Random.cs" />
+    <Compile Include="ResurrectingInvader.cs" />
+    <Compile Include="ShieldedInvader.cs" />
+    <Compile Include="SniperTower.cs" />
+    <Compile Include="StrongInvader.cs" />
     <Compile Include="Tower.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

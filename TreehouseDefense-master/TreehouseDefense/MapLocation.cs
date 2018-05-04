@@ -1,4 +1,4 @@
-﻿namespace TreehouseDefense
+namespace TreehouseDefense
 {
     public class MapLocation : Point
     {
@@ -6,14 +6,13 @@
         {
             if (!map.OnMap(this))
             {
-                throw new OutOfBoundsException(
-                    this + " is outside the boundaries of the map.");
+                throw new OutOfBoundsException(this + " is outside the boundaries of the map.");
             }
         }
-
+        
         public bool InRangeOf(MapLocation location, int range)
         {
-            return (int)DistanceTo(location) <= range;
+            return DistanceTo(location) <= range;
         }
     }
 }

@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BirdWatcher", "BirdWatcher\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleBirdRepository", "SimpleBirdRepository\SimpleBirdRepository.csproj", "{70B118E4-696B-465F-8031-570E1A1B6395}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StreamsTest", "StreamsTest\StreamsTest.csproj", "{9ED943F1-E352-4664-BA3F-94DD14229E21}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{70B118E4-696B-465F-8031-570E1A1B6395}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{70B118E4-696B-465F-8031-570E1A1B6395}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{70B118E4-696B-465F-8031-570E1A1B6395}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9ED943F1-E352-4664-BA3F-94DD14229E21}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9ED943F1-E352-4664-BA3F-94DD14229E21}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9ED943F1-E352-4664-BA3F-94DD14229E21}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9ED943F1-E352-4664-BA3F-94DD14229E21}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

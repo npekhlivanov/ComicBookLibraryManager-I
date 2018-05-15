@@ -8,6 +8,14 @@ namespace DataStructuresTest
 {
     class Program
     {
+        class IntComparer : IComparer<int>
+        {
+            public int Compare(int x, int y)
+            {
+                return x - y;
+            }
+        }
+
         static void Main(string[] args)
         {
             var list1 = new List<int> { 1, 2, 3, 4, 5 };
@@ -35,6 +43,24 @@ namespace DataStructuresTest
             var firstThree = Utils.Take(list1, 3); // no need to specify the type, as it is inferred by the compiler
 
             var set = EC(list1, list2, set1, array1).To<HashSet<int>>();
+
+            // Sorting a list
+            var bigList = EC(list1, list2, set1, array1).ToList();
+            var bigList2 = new List<int>(bigList);
+            bigList.Sort(new IntComparer()); // use IComparer
+
+            Comparison<int> intComparer = (x, y) => x.CompareTo(y); // declare Comparison using lambda
+            bigList2.Sort(intComparer);
+            int compareInts(int x, int y) { return x - y; }; // delare a local function
+            bigList2.Sort(compareInts);
+
+            // The next 2 variants below produce the same code
+            bigList2.Sort(
+                comparison: delegate (int x, int y) // declare Comparison delegate inline
+                {
+                    return x - y;
+                });
+            bigList2.Sort((x, y) => x.CompareTo(y)); // use lambda
 
             TestCollections();
 
